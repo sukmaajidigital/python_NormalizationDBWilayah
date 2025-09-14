@@ -3,6 +3,7 @@ import pandas as pd
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import time
+import glob
 
 # Load konfigurasi dari .env
 load_dotenv()
@@ -62,10 +63,17 @@ def import_csv_to_supabase(csv_file, table_name):
 if __name__ == "__main__":
     print("🔄 Memulai proses import data ke Supabase...")
     
-    # Import provinsi_geo.csv ke tabel provinsi_geo
-    import_csv_to_supabase("provinsi_geo.csv", "provinsi_geo")
-    
-    # Import kabupaten_kota_geo.csv ke tabel kabupaten_kota_geo
-    import_csv_to_supabase("kabupaten_kota_geo.csv", "kabupaten_kota_geo")
+    # Import semua file CSV dari subfolder ke tabel dengan nama yang sama
+
+    # Dapatkan semua file CSV di subfolder (misal: data/*.csv, geo/*.csv, dll)
+    csv_files = glob.glob("**/*.csv", recursive=True)
+
+    if not csv_files:
+        print("❌ Tidak ada file CSV ditemukan di subfolder!")
+    else:
+        for csv_file in csv_files:
+            # Nama tabel diambil dari nama file tanpa ekstensi
+            table_name = os.path.splitext(os.path.basename(csv_file))[0]
+            import_csv_to_supabase(csv_file, table_name)
     
     print("\n🎉 Proses import selesai!")
