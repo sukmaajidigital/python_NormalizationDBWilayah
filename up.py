@@ -83,106 +83,87 @@ def upsert_csv_to_supabase(csv_file, table_name):
             return
 
         print(f"   🔑 Primary key: {primary_key}")
-        
-        # Ambil data yang sudah ada di tabel
-        print(f"   📥 Mengambil data existing dari tabel '{table_name}'...")
-        try:
-            existing_response = supabase.table(table_name).select("*").execute()
-            existing_data = {str(row[primary_key]): row for row in existing_response.data}
-            print(f"   📋 Ditemukan {len(existing_data)} record existing")
-        except Exception as e:
-            print(f"   ⚠️  Warning: Error mengambil data existing (mungkin tabel belum ada): {e}")
-            existing_data = {}
 
+        # Batching
+        BATCH_SIZE = 500
         data = df.to_dict(orient="records")
-        
-        # Counters untuk tracking
+        total_batches = (total_rows + BATCH_SIZE - 1) // BATCH_SIZE
+
         insert_count = 0
         update_count = 0
         skip_count = 0
         error_count = 0
-        
-        print(f"🚀 Memulai upsert ke tabel '{table_name}'...")
-        
-        for i, row in enumerate(data, 1):
-            try:
-                # Bersihkan nilai None dan convert ke string yang konsisten
-                clean_row = {}
-                for k, v in row.items():
-                    if pd.isna(v) or v is None:
-                        clean_row[k] = None
-                    else:
-                        clean_row[k] = v
 
-                pk_value = str(clean_row[primary_key])
-                
-                if pk_value in existing_data:
-                    # Data sudah ada, cek apakah sama atau berbeda
-                    existing_row = existing_data[pk_value]
-                    
-                    if are_records_equal(clean_row, existing_row, exclude_keys=['created_at', 'updated_at']):
-                        # Data sama, skip
-                        skip_count += 1
-                        if i % 100 == 0:  # Progress setiap 100 baris
-                            print(f"   ⏭️  Baris {i}/{total_rows} - SKIP (data sama)")
-                    else:
-                        # Data berbeda, update
-                        try:
-                            response = supabase.table(table_name).update(clean_row).eq(primary_key, pk_value).execute()
-                            update_count += 1
-                            if i % 100 == 0 or update_count % 10 == 0:
-                                print(f"   🔄 Baris {i}/{total_rows} - UPDATE (data berubah)")
-                        except Exception as update_error:
-                            # Jika update gagal, coba insert (mungkin ada masalah constraint)
-                            try:
-                                response = supabase.table(table_name).insert(clean_row).execute()
-                                insert_count += 1
-                                print(f"   ✅ Baris {i}/{total_rows} - INSERT (update gagal, insert berhasil)")
-                            except Exception as insert_error:
-                                error_count += 1
-                                print(f"   ❌ Error pada baris {i} (PK: {pk_value}): UPDATE & INSERT gagal")
-                else:
-                    # Data belum ada, insert
-                    try:
-                        response = supabase.table(table_name).insert(clean_row).execute()
-                        insert_count += 1
-                        if i % 100 == 0 or insert_count % 10 == 0:
-                            print(f"   ✅ Baris {i}/{total_rows} - INSERT (data baru)")
-                    except Exception as insert_error:
-                        # Kemungkinan duplicate key, ambil data terbaru dan coba update
-                        try:
-                            existing_response = supabase.table(table_name).select("*").eq(primary_key, pk_value).execute()
-                            if existing_response.data:
-                                existing_record = existing_response.data[0]
-                                if not are_records_equal(clean_row, existing_record, exclude_keys=['created_at', 'updated_at']):
-                                    response = supabase.table(table_name).update(clean_row).eq(primary_key, pk_value).execute()
-                                    update_count += 1
-                                    print(f"   🔄 Baris {i}/{total_rows} - UPDATE (insert gagal, data ada)")
-                                else:
-                                    skip_count += 1
-                                    print(f"   ⏭️  Baris {i}/{total_rows} - SKIP (insert gagal, data sama)")
-                            else:
-                                error_count += 1
-                                print(f"   ❌ Error pada baris {i} (PK: {pk_value}): {str(insert_error)[:100]}...")
-                        except Exception as fallback_error:
-                            error_count += 1
-                            print(f"   ❌ Error pada baris {i} (PK: {pk_value}): Semua operasi gagal")
-                
-                # Tambahkan delay kecil untuk menghindari rate limiting
-                if i % 10 == 0:  # Delay setiap 10 operasi
-                    time.sleep(0.1)
-                
+        print(f"� Memulai upsert ke tabel '{table_name}' dengan batch size {BATCH_SIZE}...")
+
+        for batch_idx in range(total_batches):
+            start = batch_idx * BATCH_SIZE
+            end = min(start + BATCH_SIZE, total_rows)
+            batch = data[start:end]
+            batch_keys = [str(row[primary_key]) for row in batch]
+
+            # Bulk select existing data hanya untuk batch
+            try:
+                existing_response = supabase.table(table_name).select("*").in_(primary_key, batch_keys).execute()
+                existing_data = {str(row[primary_key]): row for row in existing_response.data}
             except Exception as e:
-                error_count += 1
-                print(f"   ❌ Error pada baris {i}: {str(e)[:100]}...")
-                
+                print(f"   ⚠️  Error bulk select batch {batch_idx+1}: {e}")
+                existing_data = {}
+
+            # Siapkan batch untuk insert dan update
+            to_insert = []
+            to_update = []
+            to_skip = 0
+
+            for row in batch:
+                clean_row = {k: (None if pd.isna(v) or v is None else v) for k, v in row.items()}
+                pk_value = str(clean_row[primary_key])
+                if pk_value in existing_data:
+                    existing_row = existing_data[pk_value]
+                    if are_records_equal(clean_row, existing_row, exclude_keys=['created_at', 'updated_at']):
+                        to_skip += 1
+                    else:
+                        to_update.append(clean_row)
+                else:
+                    to_insert.append(clean_row)
+
+            # Bulk insert
+            if to_insert:
+                try:
+                    # Supabase bulk insert
+                    supabase.table(table_name).insert(to_insert).execute()
+                    insert_count += len(to_insert)
+                    print(f"   ✅ Batch {batch_idx+1}/{total_batches}: {len(to_insert)} INSERT")
+                except Exception as e:
+                    error_count += len(to_insert)
+                    print(f"   ❌ Batch {batch_idx+1}: Error bulk insert: {str(e)[:100]}...")
+
+            # Bulk update
+            if to_update:
+                # Supabase tidak support bulk update, lakukan satu per satu (masih lebih efisien karena batch select)
+                for row in to_update:
+                    pk_value = str(row[primary_key])
+                    try:
+                        supabase.table(table_name).update(row).eq(primary_key, pk_value).execute()
+                        update_count += 1
+                    except Exception as e:
+                        error_count += 1
+                print(f"   🔄 Batch {batch_idx+1}/{total_batches}: {len(to_update)} UPDATE")
+
+            if to_skip:
+                skip_count += to_skip
+                print(f"   ⏭️  Batch {batch_idx+1}/{total_batches}: {to_skip} SKIP")
+
+            # Delay antar batch
+            time.sleep(0.2)
+
         print(f"\n📈 Hasil upsert untuk tabel '{table_name}':")
         print(f"   ✅ Insert (baru): {insert_count} baris")
         print(f"   🔄 Update (berubah): {update_count} baris")
         print(f"   ⏭️  Skip (sama): {skip_count} baris")
         print(f"   ❌ Error: {error_count} baris")
         print(f"   📊 Total diproses: {total_rows} baris")
-        
+
     except FileNotFoundError:
         print(f"❌ Error: File {csv_file} tidak ditemukan!")
     except Exception as e:
