@@ -1,0 +1,44 @@
+WILAYAH PENDUDUK DATA NORMALIZATION REPORT
+==================================================
+
+Generated on: 2025-09-13
+Source file: ../../db/wilayah_penduduk.sql
+Data source: Kemendagri (Kementerian Dalam Negeri)
+
+RECORD COUNTS:
+--------------------
+Provinsi_Penduduk        :       38 records
+Kabupaten_Kota_Penduduk  :      514 records
+Kecamatan_Penduduk       :        0 records
+Desa_Kelurahan_Penduduk  :        0 records
+Total                    :      552 records
+
+POPULATION STATISTICS:
+-------------------------
+Total Male Population   :     287,726,784
+Total Female Population :     282,220,502
+Total Population        :     569,947,286
+
+OUTPUT FILES:
+--------------------
+CSV Files:
+  - provinsi_penduduk.csv
+  - kabupaten_kota_penduduk.csv
+  - kecamatan_penduduk.csv
+  - desa_kelurahan_penduduk.csv
+
+SQL Files:
+  - provinsi_penduduk.sql
+  - kabupaten_kota_penduduk.sql
+  - kecamatan_penduduk.sql
+  - desa_kelurahan_penduduk.sql
+
+Database:
+  - wilayah_penduduk_normalized.db (SQLite)
+
+NORMALIZATION SCHEMA:
+------------------------------
+1. provinsi_penduduk (kode_provinsi, nama_provinsi, penduduk_pria, penduduk_wanita, penduduk_total)
+2. kabupaten_kota_penduduk (kode_kabupaten_kota, kode_provinsi, nama_kabupaten_kota, penduduk_pria, penduduk_wanita, penduduk_total)
+3. kecamatan_penduduk (kode_kecamatan, kode_kabupaten_kota, kode_provinsi, nama_kecamatan, penduduk_pria, penduduk_wanita, penduduk_total)
+4. desa_kelurahan_penduduk (kode_desa_kelurahan, kode_kecamatan, kode_kabupaten_kota, kode_provinsi, nama_desa_kelurahan, penduduk_pria, penduduk_wanita, penduduk_total)

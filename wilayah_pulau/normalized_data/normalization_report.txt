@@ -1,0 +1,46 @@
+WILAYAH PULAU DATA NORMALIZATION REPORT
+==================================================
+
+Generated on: 2025-09-13
+Source file: ../../db/wilayah_pulau.sql
+Data source: Island/Pulau geographic coordinates dataset
+
+RECORD COUNTS:
+--------------------
+Provinsi_Pulau           :       37 records
+Kabupaten_Kota_Pulau     :      299 records
+Pulau_Locations          :   17,222 records
+Total                    :   17,558 records
+
+GEOGRAPHIC STATISTICS:
+-------------------------
+Valid Coordinates       :   17,222 locations
+Latitude Range          :  -6.0742 to  10.9819
+Longitude Range         :  94.9722 to 140.7881
+
+OUTPUT FILES:
+--------------------
+CSV Files:
+  - provinsi_pulau.csv
+  - kabupaten_kota_pulau.csv
+  - pulau_locations.csv
+
+SQL Files:
+  - provinsi_pulau.sql
+  - kabupaten_kota_pulau.sql
+  - pulau_locations.sql
+
+Database:
+  - wilayah_pulau_normalized.db (SQLite)
+
+NORMALIZATION SCHEMA:
+------------------------------
+1. provinsi_pulau (kode_provinsi, nama_provinsi)
+2. kabupaten_kota_pulau (kode_kabupaten_kota, kode_provinsi, nama_kabupaten_kota)
+3. pulau_locations (id, kode_provinsi, nama_provinsi, kode_kabupaten_kota, nama_kabupaten_kota, latitude, longitude)
+
+NOTES:
+----------
+- Each record in pulau_locations represents a unique island coordinate
+- Latitude and longitude are in decimal degrees
+- Zero coordinates (0.0, 0.0) indicate missing or invalid location data

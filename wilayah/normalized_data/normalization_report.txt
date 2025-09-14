@@ -1,0 +1,37 @@
+WILAYAH DATA NORMALIZATION REPORT
+==================================================
+
+Generated on: 2025-09-13
+Source file: ../../db/wilayah.sql
+
+RECORD COUNTS:
+--------------------
+Provinsi            :       38 records
+Kabupaten_Kota      :      501 records
+Kecamatan           :    7,069 records
+Desa_Kelurahan      :   81,137 records
+Total               :   88,745 records
+
+OUTPUT FILES:
+--------------------
+CSV Files:
+  - provinsi.csv
+  - kabupaten_kota.csv
+  - kecamatan.csv
+  - desa_kelurahan.csv
+
+SQL Files:
+  - provinsi.sql
+  - kabupaten_kota.sql
+  - kecamatan.sql
+  - desa_kelurahan.sql
+
+Database:
+  - wilayah_normalized.db (SQLite)
+
+NORMALIZATION SCHEMA:
+------------------------------
+1. provinsi (kode_provinsi, nama_provinsi)
+2. kabupaten_kota (kode_kabupaten_kota, kode_provinsi, nama_kabupaten_kota)
+3. kecamatan (kode_kecamatan, kode_kabupaten_kota, kode_provinsi, nama_kecamatan)
+4. desa_kelurahan (kode_desa_kelurahan, kode_kecamatan, kode_kabupaten_kota, kode_provinsi, nama_desa_kelurahan)

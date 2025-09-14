@@ -1,0 +1,29 @@
+WILAYAH LEVEL 1-2 DATA NORMALIZATION REPORT
+=======================================================
+
+Generated on: 2025-09-13
+Source file: ../../db/wilayah_level_1_2.sql
+
+RECORD COUNTS:
+--------------------
+Provinsi_Geo             :       38 records
+Kabupaten_Kota_Geo       :      514 records
+Total                    :      552 records
+
+OUTPUT FILES:
+--------------------
+CSV Files:
+  - provinsi_geo.csv
+  - kabupaten_kota_geo.csv
+
+SQL Files:
+  - provinsi_geo.sql
+  - kabupaten_kota_geo.sql
+
+Database:
+  - wilayah_level_1_2_normalized.db (SQLite)
+
+NORMALIZATION SCHEMA:
+------------------------------
+1. provinsi_geo (kode_provinsi, nama_provinsi, ibukota, lat, lng, elv, tz, luas, penduduk, path, status)
+2. kabupaten_kota_geo (kode_kabupaten_kota, kode_provinsi, nama_kabupaten_kota, ibukota, lat, lng, elv, tz, luas, penduduk, path, status)

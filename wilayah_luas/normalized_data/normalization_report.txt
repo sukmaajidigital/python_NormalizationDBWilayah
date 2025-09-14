@@ -1,0 +1,38 @@
+WILAYAH LUAS DATA NORMALIZATION REPORT
+==================================================
+
+Generated on: 2025-09-13
+Source file: ../../db/wilayah_luas.sql
+Data source: BIG (Badan Informasi Geospasial)
+
+RECORD COUNTS:
+--------------------
+Provinsi_Luas            :       37 records
+Kabupaten_Kota_Luas      :      515 records
+Kecamatan_Luas           :        0 records
+Desa_Kelurahan_Luas      :        0 records
+Total                    :      552 records
+
+OUTPUT FILES:
+--------------------
+CSV Files:
+  - provinsi_luas.csv
+  - kabupaten_kota_luas.csv
+  - kecamatan_luas.csv
+  - desa_kelurahan_luas.csv
+
+SQL Files:
+  - provinsi_luas.sql
+  - kabupaten_kota_luas.sql
+  - kecamatan_luas.sql
+  - desa_kelurahan_luas.sql
+
+Database:
+  - wilayah_luas_normalized.db (SQLite)
+
+NORMALIZATION SCHEMA:
+------------------------------
+1. provinsi_luas (kode_provinsi, nama_provinsi, luas)
+2. kabupaten_kota_luas (kode_kabupaten_kota, kode_provinsi, nama_kabupaten_kota, luas)
+3. kecamatan_luas (kode_kecamatan, kode_kabupaten_kota, kode_provinsi, nama_kecamatan, luas)
+4. desa_kelurahan_luas (kode_desa_kelurahan, kode_kecamatan, kode_kabupaten_kota, kode_provinsi, nama_desa_kelurahan, luas)
